@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Generar QRs — Ya comió el perro</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff7ed;min-height:100vh;padding:24px 20px;color:#1c1917}
+    .container{max-width:600px;margin:0 auto}
+    h1{font-size:24px;font-weight:800;margin-bottom:6px;margin-top:24px}
+    .sub{font-size:14px;color:#78716c;margin-bottom:28px}
+    label{font-size:13px;font-weight:700;color:#57534e;display:block;margin-bottom:8px}
+    input{width:100%;padding:14px 16px;border-radius:14px;border:2px solid #e7e5e4;font-size:15px;font-family:inherit;outline:none;margin-bottom:16px}
+    input:focus{border-color:#f97316}
+    .names-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .name-input{flex:1;min-width:100px;padding:12px 14px;border-radius:12px;border:2px solid #e7e5e4;font-size:14px;font-family:inherit;outline:none}
+    .name-input:focus{border-color:#f97316}
+    .btn-add{padding:12px 18px;border-radius:12px;border:2px dashed #e7e5e4;background:white;font-size:14px;font-weight:700;color:#a8a29e;cursor:pointer;white-space:nowrap}
+    .btn{width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,#f97316,#fb923c);color:white;font-size:17px;font-weight:800;cursor:pointer;margin-top:8px;font-family:inherit}
+    .btn:active{transform:scale(0.97)}
+    .qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;margin-top:32px}
+    .qr-card{background:white;border-radius:20px;padding:20px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,0.07);page-break-inside:avoid}
+    .qr-card .dog{font-size:32px;margin-bottom:6px}
+    .qr-card h3{font-size:14px;font-weight:800;margin-bottom:4px}
+    .qr-card p{font-size:11px;color:#78716c;margin-bottom:12px}
+    .qr-card canvas,.qr-card img{border-radius:8px;max-width:100%}
+    .section{background:white;border-radius:20px;padding:24px;margin-bottom:16px}
+    .print-note{font-size:13px;color:#78716c;margin-top:20px;text-align:center}
+    .btn-print{width:100%;padding:14px;border-radius:14px;border:2px solid #e7e5e4;background:white;font-size:16px;font-weight:700;cursor:pointer;color:#57534e;font-family:inherit;margin-top:16px}
+    @media print{
+      .section,.btn,.btn-print,.print-note,.sub,h1,label,.names-row,.btn-add{display:none!important}
+      .qr-grid{margin-top:0;grid-template-columns:repeat(2,1fr)}
+      body{background:white;padding:12px}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div style="font-size:52px;text-align:center;margin:24px 0 8px">🐕</div>
+  <h1 style="text-align:center">Generador de QRs</h1>
+  <p class="sub" style="text-align:center">Un QR por persona = escanear manda el mensaje solo, sin tocar nada más.</p>
+
+  <div class="section">
+    <label>URL del servidor (ej: https://ya-comio.onrender.com)</label>
+    <input type="url" id="urlInput" placeholder="https://tu-servidor.onrender.com" />
+
+    <label>Integrantes de la familia</label>
+    <div id="namesContainer">
+      <div class="names-row">
+        <input class="name-input" type="text" placeholder="Mamá" />
+        <input class="name-input" type="text" placeholder="Papá" />
+        <input class="name-input" type="text" placeholder="Yo" />
+      </div>
+    </div>
+    <button class="btn-add" onclick="addName()">+ Agregar persona</button>
+
+    <button class="btn" onclick="generateQRs()" style="margin-top:20px">Generar QRs 🎯</button>
+  </div>
+
+  <div id="qrSection" style="display:none">
+    <div class="qr-grid" id="qrGrid"></div>
+    <p class="print-note">✅ Imprimí esta página y recortá cada tarjetita para cada integrante</p>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir tarjetitas</button>
+  </div>
+</div>
+
+<script>
+function addName() {
+  const container = document.getElementById('namesContainer');
+  const row = document.createElement('div');
+  row.className = 'names-row';
+  const input = document.createElement('input');
+  input.className = 'name-input';
+  input.type = 'text';
+  input.placeholder = 'Nombre...';
+  row.appendChild(input);
+  container.appendChild(row);
+  input.focus();
+}
+
+function generateQRs() {
+  const baseUrl = document.getElementById('urlInput').value.trim().replace(/\/$/, '');
+  if (!baseUrl || !baseUrl.startsWith('http')) {
+    alert('Pegá la URL del servidor primero (ej: https://ya-comio.onrender.com)');
+    return;
+  }
+
+  const inputs = document.querySelectorAll('.name-input');
+  const names = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+  if (!names.length) { alert('Agregá al menos un nombre'); return; }
+
+  const grid = document.getElementById('qrGrid');
+  grid.innerHTML = '';
+
+  names.forEach(name => {
+    const url = `${baseUrl}/fed?por=${encodeURIComponent(name)}`;
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+    card.innerHTML = `
+      <div class="dog">🐕</div>
+      <h3>Ya comió</h3>
+      <p>Escanear = ${name} avisó al grupo</p>
+      <div id="qr-${name.replace(/\s/g,'')}"></div>
+      <p style="margin-top:8px;font-size:11px;font-weight:700;color:#f97316">${name}</p>
+    `;
+    grid.appendChild(card);
+
+    new QRCode(document.getElementById('qr-' + name.replace(/\s/g,'')), {
+      text: url, width: 180, height: 180,
+      colorDark: '#1c1917', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  });
+
+  document.getElementById('qrSection').style.display = 'block';
+  document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ya-comio-el-perro
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    disk:
+      name: wa-session
+      mountPath: /app/wa-session
+      sizeGB: 1
+    envVars:
+      - key: SESSION_DIR
+        value: /app/wa-session
+      - key: GROUP_JID
+        value: ""
+      - key: GROUP_INVITE
+        value: FnrWqHjgdT3IAIqmJlqcmO
